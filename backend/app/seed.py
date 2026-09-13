@@ -6,7 +6,6 @@ from app.models import Zone, Worker, Complaint, ComplaintEvent
 from app.classifier import classifier_instance
 from app.priority import calculate_priority_score
 
-# Mahakumbh Prayagraj Sectors & GPS coordinates
 SECTORS_DATA = [
     {"name": "Sector 1 (Sangam Ghat)", "sector_code": "SEC-01", "lat": 25.4320, "lng": 81.8885},
     {"name": "Sector 2 (Shastri Bridge)", "sector_code": "SEC-02", "lat": 25.4395, "lng": 81.8820},
@@ -27,23 +26,23 @@ SECTORS_DATA = [
 ]
 
 WORKERS_NAMES = [
-    ("Ramesh Kumar", "Sector 1 (Sangam Ghat)"),
-    ("Suresh Sharma", "Sector 1 (Sangam Ghat)"),
-    ("Amit Yadav", "Sector 2 (Shastri Bridge)"),
-    ("Vikram Singh", "Sector 3 (Parade Ground)"),
-    ("Pankaj Verma", "Sector 4 (Arail Ghat)"),
-    ("Dinesh Gupta", "Sector 5 (Jhunsi Pontoon 1)"),
-    ("Manoj Tiwari", "Sector 6 (Jhunsi Pontoon 2)"),
-    ("Sunil Kumar", "Sector 7 (Nagvasuki Temple)"),
-    ("Rajesh Bind", "Sector 8 (Bhakti Vedant Marg)"),
-    ("Deepak Maurya", "Sector 9 (Kalyani Devi Road)"),
-    ("Santosh Prajapati", "Sector 10 (Trivenipuram Gate)"),
-    ("Anil Pal", "Sector 11 (VVIP Tent City)"),
-    ("Rakesh Nishad", "Sector 12 (Akshayavat Marg)"),
-    ("Vipin Pandey", "Sector 13 (Sangam Control Room)"),
-    ("Vijay Mishra", "Sector 14 (Food Plaza & Bazaar)"),
-    ("Sanjay Gauttam", "Sector 15 (Pilgrim Shelter 3)"),
-    ("Gopal Tripath", "Sector 16 (Daraganj Station Side)")
+    ("Ramesh Kumar", "Sector 1 (Sangam Ghat)", "+91 98123 45671", "Sanitation Dept"),
+    ("Suresh Sharma", "Sector 1 (Sangam Ghat)", "+91 98123 45672", "Water Supply Dept"),
+    ("Amit Yadav", "Sector 2 (Shastri Bridge)", "+91 98123 45673", "Drainage & Sewage Dept"),
+    ("Vikram Singh", "Sector 3 (Parade Ground)", "+91 98123 45674", "Solid Waste Management"),
+    ("Pankaj Verma", "Sector 4 (Arail Ghat)", "+91 98123 45675", "Public Health Dept"),
+    ("Dinesh Gupta", "Sector 5 (Jhunsi Pontoon 1)", "+91 98123 45676", "Sanitation Dept"),
+    ("Manoj Tiwari", "Sector 6 (Jhunsi Pontoon 2)", "+91 98123 45677", "Water Supply Dept"),
+    ("Sunil Kumar", "Sector 7 (Nagvasuki Temple)", "+91 98123 45678", "Solid Waste Management"),
+    ("Rajesh Bind", "Sector 8 (Bhakti Vedant Marg)", "+91 98123 45679", "Sanitation Dept"),
+    ("Deepak Maurya", "Sector 9 (Kalyani Devi Road)", "+91 98123 45680", "Drainage & Sewage Dept"),
+    ("Santosh Prajapati", "Sector 10 (Trivenipuram Gate)", "+91 98123 45681", "Sanitation Dept"),
+    ("Anil Pal", "Sector 11 (VVIP Tent City)", "+91 98123 45682", "Public Health Dept"),
+    ("Rakesh Nishad", "Sector 12 (Akshayavat Marg)", "+91 98123 45683", "Sanitation Dept"),
+    ("Vipin Pandey", "Sector 13 (Sangam Control Room)", "+91 98123 45684", "Water Supply Dept"),
+    ("Vijay Mishra", "Sector 14 (Food Plaza & Bazaar)", "+91 98123 45685", "Solid Waste Management"),
+    ("Sanjay Gauttam", "Sector 15 (Pilgrim Shelter 3)", "+91 98123 45686", "Public Health Dept"),
+    ("Gopal Tripathi", "Sector 16 (Daraganj Station Side)", "+91 98123 45687", "Drainage & Sewage Dept")
 ]
 
 SEED_COMPLAINT_TEMPLATES = [
@@ -63,72 +62,52 @@ SEED_COMPLAINT_TEMPLATES = [
     ("Drinking water kiosk dry Sector 13 Sangam Control Room side", 25.4363, 81.8814),
     ("Trash bin full with paper plates and tea cups Sector 14 Food Plaza", 25.4413, 81.8684),
     ("Handwashing unit tap missing Sector 15 Pilgrim Shelter 3", 25.4233, 81.8644),
-    ("Nala jam problem near Daraganj station Sector 16", 25.4523, 81.8804),
-    ("Sector 1 Ghat 2 toilet spilled human waste emergency cleanup needed", 25.4328, 81.8892),
-    ("Tap water disconnected Sector 2 bridge entry point", 25.4399, 81.8826),
-    ("Waste bin overfilled near Sector 3 parking lot", 25.4455, 81.8748),
-    ("Sewage line choke near Sector 4 food court", 25.4186, 81.8766),
-    ("Toilet flush broken and dirty water entering passage Sector 5", 25.4386, 81.8996),
-    ("No drinking water for last 3 hours in Sector 6 camp", 25.4426, 81.9057),
-    ("Garbage bin overflowing in Sector 7 pilgrim rest area", 25.4565, 81.8717),
-    ("Broken handwashing basin tap in Sector 8 main intersection", 25.4496, 81.8897)
+    ("Nala jam problem near Daraganj station Sector 16", 25.4523, 81.8804)
 ]
 
 def seed_database(db: Session):
-    # Train classifier first
     print("Training ML classifier pipeline...")
     classifier_metrics = classifier_instance.train()
     print(f"Classifier trained: Accuracy={classifier_metrics['accuracy']}, Macro F1={classifier_metrics['f1_score']}")
 
-    # Clear existing
-    db.query(ComplaintEvent).delete()
-    db.query(Complaint).delete()
-    db.query(Worker).delete()
-    db.query(Zone).delete()
-    db.commit()
+    # Drop and recreate tables to ensure schema matches
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
     # 1. Seed Zones
-    zones_map = {}
     for s in SECTORS_DATA:
         z = Zone(name=s["name"], sector_code=s["sector_code"], lat=s["lat"], lng=s["lng"])
         db.add(z)
-        zones_map[s["name"]] = z
     db.commit()
 
     # 2. Seed Workers
     workers_list = []
-    for name, z_name in WORKERS_NAMES:
-        w = Worker(name=name, zone=z_name, status="available", is_synthetic=True)
+    for name, z_name, phone, dept in WORKERS_NAMES:
+        w = Worker(name=name, zone=z_name, phone=phone, department=dept, status="available", is_synthetic=True)
         db.add(w)
         workers_list.append(w)
     db.commit()
 
-    # 3. Seed Complaints (~200 records over past 48 hours)
+    # 3. Seed Complaints (~180 records over past 48 hours)
     now = datetime.utcnow()
     statuses_weights = ["resolved"] * 50 + ["in_progress"] * 25 + ["assigned"] * 15 + ["reported"] * 10
     
-    complaints = []
-    for i in range(185):
-        # Pick template or build variation
+    for i in range(180):
         tmpl_text, default_lat, default_lng = random.choice(SEED_COMPLAINT_TEMPLATES)
         z_obj = random.choice(SECTORS_DATA)
         zone_name = z_obj["name"]
         
-        # Jitter lat/lng slightly
         lat = z_obj["lat"] + random.uniform(-0.003, 0.003)
         lng = z_obj["lng"] + random.uniform(-0.003, 0.003)
 
-        # Vary text slightly to simulate different citizens
         prefixes = ["Emergency: ", "Please fix: ", "Urgent issue - ", "Help needed - ", "Report: "]
         raw_text = random.choice(prefixes) + tmpl_text
 
-        # Classify text
         cls_result = classifier_instance.predict(raw_text)
         category = cls_result["category"]
         department = cls_result["department"]
 
-        # Timestamps
-        created_minutes_ago = random.randint(15, 2880) # past 48h
+        created_minutes_ago = random.randint(15, 2880)
         created_at = now - timedelta(minutes=created_minutes_ago)
 
         status = random.choice(statuses_weights)
@@ -136,20 +115,17 @@ def seed_database(db: Session):
         resolved_at = None
         assigned_worker_id = None
 
-        # Pick worker from same zone if assigned/in_progress/resolved
         matching_workers = [w for w in workers_list if w.zone == zone_name]
         worker = matching_workers[0] if matching_workers else random.choice(workers_list)
 
         if status in ["assigned", "in_progress", "resolved"]:
-            assigned_minutes = max(5, created_minutes_ago - random.randint(5, 60))
             assigned_at = created_at + timedelta(minutes=random.randint(5, 45))
             assigned_worker_id = worker.id
 
         if status == "resolved":
-            resolution_duration_mins = random.randint(20, 180) # 20m to 3h
+            resolution_duration_mins = random.randint(20, 180)
             resolved_at = (assigned_at or created_at) + timedelta(minutes=resolution_duration_mins)
 
-        # Priority calculation
         priority_score = calculate_priority_score(category, created_at, zone_name, db)
 
         complaint = Complaint(
@@ -161,6 +137,8 @@ def seed_database(db: Session):
             status=status,
             photo_url=None,
             is_synthetic=True,
+            duplicate_count=random.choice([1, 1, 1, 2, 3]),
+            is_duplicate=False,
             created_at=created_at,
             assigned_at=assigned_at,
             resolved_at=resolved_at,
@@ -171,7 +149,6 @@ def seed_database(db: Session):
         db.add(complaint)
         db.flush()
 
-        # Add audit events
         ev1 = ComplaintEvent(
             complaint_id=complaint.id,
             event_type="CREATED",
@@ -185,7 +162,7 @@ def seed_database(db: Session):
                 complaint_id=complaint.id,
                 event_type="ASSIGNED",
                 timestamp=assigned_at,
-                details=f"Assigned to worker '{worker.name}' in zone {zone_name}."
+                details=f"Assigned to worker '{worker.name}' (Contact: {worker.phone}, Zone: {zone_name})."
             )
             db.add(ev2)
 
@@ -208,4 +185,4 @@ def seed_database(db: Session):
             db.add(ev4)
 
     db.commit()
-    print(f"Successfully seeded 16 zones, {len(workers_list)} workers, and 185 synthetic complaints with events!")
+    print(f"Successfully seeded 16 zones, {len(workers_list)} workers, and 180 synthetic complaints with events!")

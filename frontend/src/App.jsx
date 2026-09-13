@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from './components/Navbar';
+import RoleSelectionLanding from './components/RoleSelectionLanding';
 import SyntheticDataBanner from './components/SyntheticDataBanner';
 import CitizenReportForm from './components/CitizenReportForm';
 import StaffDashboard from './components/StaffDashboard';
@@ -8,7 +9,10 @@ import TransparencyDashboard from './components/TransparencyDashboard';
 import DecisionLogModal from './components/DecisionLogModal';
 
 export default function App() {
-  const [activeView, setActiveView] = useState('citizen'); // citizen | staff | transparency
+  const [activePortal, setActivePortal] = useState('landing'); // landing | citizen | admin
+  const [citizenTab, setCitizenTab] = useState('report'); // report | transparency
+  const [adminTab, setAdminTab] = useState('queue'); // queue | transparency
+
   const [zones, setZones] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [summaryStats, setSummaryStats] = useState(null);
@@ -34,8 +38,16 @@ export default function App() {
     }
   };
 
-  const handleComplaintSubmitted = (newComplaint) => {
-    // Refresh summary metrics
+  const handleSelectRole = (role) => {
+    setActivePortal(role);
+    if (role === 'citizen') {
+      setCitizenTab('report');
+    } else if (role === 'admin') {
+      setAdminTab('queue');
+    }
+  };
+
+  const handleComplaintSubmitted = () => {
     fetchInitialData();
   };
 
@@ -44,8 +56,12 @@ export default function App() {
       
       {/* Top Navbar */}
       <Navbar
-        activeView={activeView}
-        setActiveView={setActiveView}
+        activePortal={activePortal}
+        setActivePortal={setActivePortal}
+        citizenTab={citizenTab}
+        setCitizenTab={setCitizenTab}
+        adminTab={adminTab}
+        setAdminTab={setAdminTab}
         onOpenDecisions={() => setIsDecisionsOpen(true)}
         staffUser={staffUser}
         setStaffUser={setStaffUser}
@@ -57,28 +73,39 @@ export default function App() {
         classifierMetrics={summaryStats ? summaryStats.classifier_metrics : null}
       />
 
-      {/* Main View Area */}
+      {/* Main Content Area */}
       <main className="flex-1">
-        {activeView === 'citizen' && (
-          <CitizenReportForm
-            zones={zones}
-            onComplaintSubmitted={handleComplaintSubmitted}
-          />
+        {activePortal === 'landing' && (
+          <RoleSelectionLanding onSelectRole={handleSelectRole} />
         )}
 
-        {activeView === 'staff' && (
-          <StaffDashboard
-            zones={zones}
-            workers={workers}
-            staffUser={staffUser}
-          />
+        {activePortal === 'citizen' && (
+          citizenTab === 'report' ? (
+            <CitizenReportForm
+              zones={zones}
+              onComplaintSubmitted={handleComplaintSubmitted}
+            />
+          ) : (
+            <TransparencyDashboard
+              syntheticPercentage={summaryStats ? summaryStats.synthetic_percentage : 100}
+              classifierMetrics={summaryStats ? summaryStats.classifier_metrics : null}
+            />
+          )
         )}
 
-        {activeView === 'transparency' && (
-          <TransparencyDashboard
-            syntheticPercentage={summaryStats ? summaryStats.synthetic_percentage : 100}
-            classifierMetrics={summaryStats ? summaryStats.classifier_metrics : null}
-          />
+        {activePortal === 'admin' && (
+          adminTab === 'queue' ? (
+            <StaffDashboard
+              zones={zones}
+              workers={workers}
+              staffUser={staffUser}
+            />
+          ) : (
+            <TransparencyDashboard
+              syntheticPercentage={summaryStats ? summaryStats.synthetic_percentage : 100}
+              classifierMetrics={summaryStats ? summaryStats.classifier_metrics : null}
+            />
+          )
         )}
       </main>
 

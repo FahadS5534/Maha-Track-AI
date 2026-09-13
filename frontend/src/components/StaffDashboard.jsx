@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Filter, AlertTriangle, Clock, CheckCircle2, UserPlus, MapPin, ChevronRight, Eye, RefreshCw, Sparkles, FileCheck } from 'lucide-react';
+import { Shield, Filter, AlertTriangle, Clock, CheckCircle2, UserPlus, MapPin, ChevronRight, Eye, RefreshCw, Sparkles, FileCheck, Layers } from 'lucide-react';
 import axios from 'axios';
 import IncidentMap from './IncidentMap';
+import WorkerCardSelector from './WorkerCardSelector';
 
 export default function StaffDashboard({ zones, workers, staffUser }) {
   const [complaints, setComplaints] = useState([]);
@@ -29,7 +30,7 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
       const res = await axios.get(url);
       setComplaints(res.data);
     } catch (err) {
-      console.error("Error fetching staff queue:", err);
+      console.error("Error fetching admin queue:", err);
     } finally {
       setLoading(false);
     }
@@ -44,7 +45,6 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
       });
       setShowAssignModal(false);
       fetchComplaints();
-      // Update local modal if open
       const updated = await axios.get(`/api/complaints/${selectedComplaint.id}`);
       setSelectedComplaint(updated.data);
     } catch (err) {
@@ -71,7 +71,6 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
 
   const openAssignModal = (complaint) => {
     setSelectedComplaint(complaint);
-    // Auto-preselect worker from same zone if available
     const zoneWorkers = workers.filter(w => w.zone === complaint.zone);
     if (zoneWorkers.length > 0) {
       setSelectedWorkerId(zoneWorkers[0].id);
@@ -84,26 +83,28 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       
-      {/* Top Banner / Filters */}
+      {/* Top Banner / Title */}
       <div className="bg-white rounded-2xl p-5 border border-brand-border shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2">
-              <Shield className="w-5 h-5 text-brand-emerald" />
-              <h2 className="text-xl font-extrabold text-brand-dark">Government Operational Queue</h2>
+              <Shield className="w-6 h-6 text-brand-emerald" />
+              <h2 className="text-xl sm:text-2xl font-extrabold text-brand-dark tracking-tight">
+                Admin Complaint Management System
+              </h2>
               <span className="bg-brand-emerald-light text-brand-emerald text-xs font-bold px-2.5 py-0.5 rounded-full border border-brand-emerald/20">
-                {complaints.length} Incidents
+                {complaints.length} Active Complaints
               </span>
             </div>
             <p className="text-xs text-brand-stone mt-1">
-              Prioritized by rule-based formula: Severity (40%) + Pending Time (30%) + Local Cluster Density (30%)
+              Official dispatch control room: Rule-based Priority Queue ($0 - 100$) + Field Worker Assignment + Map Tracking
             </p>
           </div>
 
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setShowMap(!showMap)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
                 showMap ? 'bg-brand-emerald text-white border-brand-emerald' : 'bg-white text-brand-dark border-brand-border hover:bg-brand-muted'
               }`}
             >
@@ -165,7 +166,7 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
         </div>
       </div>
 
-      {/* Optional Leaflet Map View */}
+      {/* Leaflet Map View */}
       {showMap && (
         <IncidentMap
           complaints={complaints}
@@ -181,7 +182,7 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
         <div className={`space-y-3 ${selectedComplaint ? 'lg:col-span-7' : 'lg:col-span-12'}`}>
           {loading ? (
             <div className="bg-white rounded-2xl p-8 text-center text-xs text-brand-stone border border-brand-border">
-              Loading operational queue...
+              Loading admin complaint queue...
             </div>
           ) : complaints.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center text-xs text-brand-stone border border-brand-border space-y-2">
@@ -205,7 +206,6 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        {/* Priority Badge */}
                         <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
                           isHigh ? 'bg-red-100 text-red-800 border border-red-200' :
                           isMed ? 'bg-amber-100 text-amber-800 border border-amber-200' :
@@ -222,9 +222,10 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
                           {c.department}
                         </span>
 
-                        {c.is_synthetic && (
-                          <span className="text-[10px] text-brand-amber font-mono bg-brand-amber-light/50 px-1.5 py-0.5 rounded">
-                            Demo Data
+                        {c.duplicate_count > 1 && (
+                          <span className="text-[10px] text-brand-terracotta font-bold bg-brand-terracotta/10 px-2 py-0.5 rounded-md border border-brand-terracotta/20 flex items-center space-x-1">
+                            <Layers className="w-3 h-3 text-brand-terracotta" />
+                            <span>{c.duplicate_count} Reports</span>
                           </span>
                         )}
                       </div>
@@ -241,13 +242,12 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
                         
                         {c.assigned_worker && (
                           <span className="text-brand-emerald font-medium">
-                            Worker: {c.assigned_worker.name}
+                            Worker: <strong>{c.assigned_worker.name}</strong> ({c.assigned_worker.phone})
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Status Pill & Actions */}
                     <div className="flex flex-col items-end space-y-2">
                       <span className={`text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider ${
                         c.status === 'resolved' ? 'bg-brand-emerald-light text-brand-emerald border border-brand-emerald/30' :
@@ -299,18 +299,12 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
           <div className="lg:col-span-5 bg-white rounded-2xl p-5 border border-brand-border shadow-xs space-y-4 self-start sticky top-20">
             <div className="flex items-center justify-between border-b border-brand-border pb-3">
               <div>
-                <span className="text-[10px] font-bold text-brand-stone uppercase tracking-wider block">Incident Detail & Lifecycle</span>
+                <span className="text-[10px] font-bold text-brand-stone uppercase tracking-wider block">Admin Incident Inspection</span>
                 <h3 className="font-bold text-brand-dark text-sm">ID: {selectedComplaint.id.substring(0, 13)}...</h3>
               </div>
-              <button
-                onClick={() => setSelectedComplaint(null)}
-                className="text-brand-stone hover:text-brand-dark text-xs p-1"
-              >
-                ✕
-              </button>
+              <button onClick={() => setSelectedComplaint(null)} className="text-brand-stone hover:text-brand-dark text-xs p-1">✕</button>
             </div>
 
-            {/* Complaint summary info */}
             <div className="bg-brand-linen p-3 rounded-xl border border-brand-border space-y-2 text-xs">
               <p className="font-semibold text-brand-dark">"{selectedComplaint.raw_text}"</p>
               <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
@@ -329,15 +323,15 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
                   onClick={() => openAssignModal(selectedComplaint)}
                   className="text-[11px] text-brand-emerald font-bold hover:underline"
                 >
-                  {selectedComplaint.assigned_worker ? "Re-assign" : "+ Assign Worker"}
+                  {selectedComplaint.assigned_worker ? "Re-assign Worker" : "+ Assign Worker"}
                 </button>
               </div>
 
               {selectedComplaint.assigned_worker ? (
-                <div className="text-xs bg-brand-emerald-light/50 p-2 rounded-lg border border-brand-emerald/20 flex justify-between items-center">
+                <div className="text-xs bg-brand-emerald-light/50 p-2.5 rounded-xl border border-brand-emerald/20 flex justify-between items-center">
                   <div>
                     <span className="font-bold text-brand-dark">{selectedComplaint.assigned_worker.name}</span>
-                    <span className="text-brand-stone block text-[10px]">{selectedComplaint.assigned_worker.zone}</span>
+                    <span className="text-brand-stone block text-[10px]">{selectedComplaint.assigned_worker.phone} • {selectedComplaint.assigned_worker.zone}</span>
                   </div>
                   <span className="text-[10px] font-semibold text-brand-emerald bg-white px-2 py-0.5 rounded border border-brand-emerald/30 uppercase">
                     {selectedComplaint.assigned_worker.status}
@@ -348,11 +342,11 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
               )}
             </div>
 
-            {/* Event Lifecycle Audit Log */}
+            {/* Event Timeline */}
             <div className="space-y-2">
               <span className="text-xs font-bold text-brand-dark flex items-center space-x-1">
                 <Clock className="w-3.5 h-3.5 text-brand-terracotta" />
-                <span>Lifecycle Event Timeline</span>
+                <span>Audit Timeline</span>
               </span>
 
               <div className="space-y-2 border-l-2 border-brand-border pl-3 ml-2 text-xs">
@@ -373,8 +367,7 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
               </div>
             </div>
 
-            {/* Actions Bar */}
-            <div className="pt-2 flex gap-2">
+            <div className="pt-2">
               {selectedComplaint.status !== 'resolved' && (
                 <button
                   onClick={() => handleUpdateStatus(selectedComplaint.id, 'resolved')}
@@ -388,51 +381,48 @@ export default function StaffDashboard({ zones, workers, staffUser }) {
         )}
       </div>
 
-      {/* Assign Worker Modal */}
+      {/* Assign Worker Modal with WorkerCardSelector */}
       {showAssignModal && selectedComplaint && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-dark/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-brand-border space-y-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl border border-brand-border space-y-4">
             <div className="flex justify-between items-center border-b border-brand-border pb-3">
-              <h3 className="font-bold text-brand-dark text-base">Assign Worker to Complaint</h3>
-              <button onClick={() => setShowAssignModal(false)} className="text-brand-stone hover:text-brand-dark">✕</button>
+              <div>
+                <h3 className="font-bold text-brand-dark text-base">Assign Field Worker</h3>
+                <span className="text-xs text-brand-stone">Select field staff for Ticket #{selectedComplaint.id.substring(0, 8)}</span>
+              </div>
+              <button onClick={() => setShowAssignModal(false)} className="text-brand-stone hover:text-brand-dark font-bold text-sm">✕</button>
             </div>
 
-            <div className="text-xs space-y-1">
-              <span className="text-brand-stone block">Complaint ID: {selectedComplaint.id.substring(0, 10)}...</span>
-              <p className="font-semibold text-brand-dark bg-brand-linen p-2 rounded-lg border border-brand-border">
-                "{selectedComplaint.raw_text}"
-              </p>
-              <span className="text-brand-stone block pt-1">Target Zone: <strong>{selectedComplaint.zone}</strong></span>
+            <div className="text-xs bg-brand-linen p-3 rounded-xl border border-brand-border space-y-1">
+              <span className="text-brand-stone block">Complaint Text:</span>
+              <p className="font-semibold text-brand-dark">"{selectedComplaint.raw_text}"</p>
+              <div className="flex justify-between text-[11px] pt-1">
+                <span>Target Zone: <strong>{selectedComplaint.zone}</strong></span>
+                <span>Category: <strong className="capitalize">{selectedComplaint.category.replace('_', ' ')}</strong></span>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-brand-dark mb-1.5">Select Sanitation Worker</label>
-              <select
-                value={selectedWorkerId}
-                onChange={(e) => setSelectedWorkerId(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-brand-border bg-white focus:outline-none focus:ring-2 focus:ring-brand-emerald"
-              >
-                {workers.map(w => (
-                  <option key={w.id} value={w.id}>
-                    {w.name} ({w.zone}) — {w.status}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Worker Detail Cards Component */}
+            <WorkerCardSelector
+              workers={workers}
+              selectedWorkerId={selectedWorkerId}
+              onSelectWorker={(id) => setSelectedWorkerId(id)}
+              targetZone={selectedComplaint.zone}
+            />
 
-            <div className="flex justify-end space-x-2 pt-2">
+            <div className="flex justify-end space-x-2 pt-2 border-t border-brand-border">
               <button
                 onClick={() => setShowAssignModal(false)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-brand-border text-brand-stone"
+                className="px-3.5 py-1.5 rounded-lg text-xs font-medium border border-brand-border text-brand-stone hover:bg-brand-muted"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAssignWorker}
-                disabled={isAssigning}
-                className="px-4 py-1.5 rounded-lg text-xs font-bold bg-brand-emerald text-white hover:bg-emerald-800 transition-all shadow-2xs"
+                disabled={isAssigning || !selectedWorkerId}
+                className="px-4 py-1.5 rounded-lg text-xs font-bold bg-brand-emerald text-white hover:bg-emerald-800 transition-all shadow-2xs disabled:opacity-50"
               >
-                {isAssigning ? "Assigning..." : "Confirm Worker Assignment"}
+                {isAssigning ? "Assigning..." : "Confirm Assignment"}
               </button>
             </div>
           </div>

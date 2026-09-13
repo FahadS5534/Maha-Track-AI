@@ -4,7 +4,7 @@ from datetime import datetime
 
 class ComplaintCreate(BaseModel):
     raw_text: str = Field(..., min_length=3, description="Citizen complaint text")
-    zone: str = Field(..., description="Zone name, e.g. Sector 1 (Sangam Bank)")
+    zone: str = Field(..., description="Zone name, e.g. Sector 1 (Sangam Ghat)")
     photo_url: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
@@ -27,9 +27,12 @@ class ComplaintEventOut(BaseModel):
 class WorkerOut(BaseModel):
     id: str
     name: str
+    phone: Optional[str] = "+91 98765 43210"
+    department: Optional[str] = "Sanitation Dept"
     zone: str
     status: str
     is_synthetic: bool
+    active_tasks_count: Optional[int] = 0
 
     class Config:
         from_attributes = True
@@ -44,6 +47,9 @@ class ComplaintOut(BaseModel):
     status: str
     photo_url: Optional[str] = None
     is_synthetic: bool
+    duplicate_count: Optional[int] = 1
+    is_duplicate: Optional[bool] = False
+    already_reported: Optional[bool] = False
     created_at: datetime
     assigned_at: Optional[datetime] = None
     resolved_at: Optional[datetime] = None

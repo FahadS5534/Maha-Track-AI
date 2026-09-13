@@ -3,7 +3,6 @@ from typing import Optional, List
 from datetime import datetime
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 
@@ -15,16 +14,14 @@ from app.priority import calculate_priority_score
 from app.seed import seed_database
 from app.auth import create_access_token, verify_token, STAFF_CREDENTIALS
 
-# Create DB tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Maha-Track AI Backend",
     description="Civic Sanitation Response & Transparency API for Mahakumbh 2026",
-    version="1.0.0"
+    version="1.1.0"
 )
 
-# Enable CORS for Vite frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -36,9 +33,7 @@ app.add_middleware(
 @app.on_event("startup")
 def startup_event():
     db = next(get_db())
-    # Ensure classifier trained
     classifier_instance.load_or_train()
-    # Auto-seed if database is empty
     if db.query(Zone).count() == 0 or db.query(Complaint).count() == 0:
         print("Empty database detected. Generating synthetic seed dataset...")
         seed_database(db)
@@ -51,29 +46,68 @@ def login(creds: dict):
     if email in STAFF_CREDENTIALS and STAFF_CREDENTIALS[email] == password:
         token = create_access_token({"sub": email, "role": "admin"})
         return {"access_token": token, "token_type": "bearer", "email": email}
-    raise HTTPException(status_code=401, detail="Invalid email or password")
+    raise HTTPException(status_code=401, detail="Invalid admin email or password")
 
 
 # --- CLASSIFICATION ENDPOINT ---
 @app.post("/classify", response_model=schemas.ClassifyResponse)
 def classify_text(req: schemas.ClassifyRequest):
-    """Internal endpoint: Takes raw complaint text, returns predicted category, department & confidence."""
     if not req.raw_text or len(req.raw_text.strip()) < 3:
         raise HTTPException(status_code=400, detail="Text must be at least 3 characters.")
-    res = classifier_instance.predict(req.raw_text)
-    return res
+    return classifier_instance.predict(req.raw_text)
 
 
-# --- CITIZEN COMPLAINT SUBMISSION ---
+# --- CITIZEN COMPLAINT SUBMISSION (WITH DUPLICATE CHECK) ---
 @app.post("/complaints", response_model=schemas.ComplaintOut, status_code=status.HTTP_201_CREATED)
 def create_complaint(req: schemas.ComplaintCreate, db: Session = Depends(get_db)):
-    """Public citizen endpoint: Submits a new sanitation report in under 30s."""
+    """
+    Public citizen endpoint:
+    Checks if an open complaint for the same category & zone already exists.
+    If yes: marks already_reported=True, increments duplicate count, boosts priority score, and returns existing complaint.
+    If no: creates a new complaint.
+    """
     # 1. Run ML classifier
     cls_res = classifier_instance.predict(req.raw_text)
     category = cls_res["category"]
     department = cls_res["department"]
 
-    # 2. Get default zone coordinates if not provided
+    now = datetime.utcnow()
+
+    # 2. Check if an active open complaint already exists in the same zone & category
+    existing_open = db.query(Complaint).filter(
+        Complaint.zone == req.zone,
+        Complaint.category == category,
+        Complaint.status.in_(["reported", "assigned", "in_progress"])
+    ).first()
+
+    if existing_open:
+        # Issue is ALREADY REPORTED! Boost priority and increment counter
+        existing_open.duplicate_count = (existing_open.duplicate_count or 1) + 1
+        existing_open.is_duplicate = True
+        # Boost priority score by 15 points per duplicate report
+        existing_open.priority_score = min(100, existing_open.priority_score + 15)
+
+        # Log duplicate report event
+        dup_event = ComplaintEvent(
+            complaint_id=existing_open.id,
+            event_type="DUPLICATE_REPORTED",
+            timestamp=now,
+            details=f"Another citizen reported this same issue in {req.zone}. Priority score boosted to {existing_open.priority_score} (Total reports: {existing_open.duplicate_count})."
+        )
+        db.add(dup_event)
+        db.commit()
+
+        # Fetch refreshed record with relationships
+        refreshed = db.query(Complaint).options(
+            joinedload(Complaint.assigned_worker),
+            joinedload(Complaint.events)
+        ).filter(Complaint.id == existing_open.id).first()
+
+        res_dict = schemas.ComplaintOut.from_orm(refreshed)
+        res_dict.already_reported = True
+        return res_dict
+
+    # 3. If new issue: Get default zone coordinates if not provided
     lat = req.lat
     lng = req.lng
     zone_obj = db.query(Zone).filter(Zone.name == req.zone).first()
@@ -81,11 +115,8 @@ def create_complaint(req: schemas.ComplaintCreate, db: Session = Depends(get_db)
         lat = zone_obj.lat
         lng = zone_obj.lng
 
-    # 3. Calculate initial priority score
-    now = datetime.utcnow()
     priority = calculate_priority_score(category, now, req.zone, db)
 
-    # 4. Create record (is_synthetic=False for live submitted reports!)
     complaint = Complaint(
         raw_text=req.raw_text,
         category=category,
@@ -95,6 +126,8 @@ def create_complaint(req: schemas.ComplaintCreate, db: Session = Depends(get_db)
         status="reported",
         photo_url=req.photo_url,
         is_synthetic=False,
+        duplicate_count=1,
+        is_duplicate=False,
         created_at=now,
         lat=lat,
         lng=lng
@@ -103,21 +136,23 @@ def create_complaint(req: schemas.ComplaintCreate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(complaint)
 
-    # 5. Log audit event
     event = ComplaintEvent(
         complaint_id=complaint.id,
         event_type="CREATED",
         timestamp=now,
-        details=f"Live report created by citizen. Classifier tagged as '{category}' ({department}) with confidence {cls_res['confidence']*100:.1f}%."
+        details=f"New report created by citizen. Auto-classified as '{category}' ({department}) with confidence {cls_res['confidence']*100:.1f}%."
     )
     db.add(event)
     db.commit()
 
-    # Re-fetch with relationships
-    return db.query(Complaint).options(
+    res = db.query(Complaint).options(
         joinedload(Complaint.assigned_worker),
         joinedload(Complaint.events)
     ).filter(Complaint.id == complaint.id).first()
+
+    res_out = schemas.ComplaintOut.from_orm(res)
+    res_out.already_reported = False
+    return res_out
 
 
 # --- STAFF QUEUE & COMPLAINT MANAGEMENT ---
@@ -129,7 +164,6 @@ def get_complaints(
     db: Session = Depends(get_db),
     user_payload: dict = Depends(verify_token)
 ):
-    """Staff operational queue: Sorted by priority score descending."""
     query = db.query(Complaint).options(
         joinedload(Complaint.assigned_worker),
         joinedload(Complaint.events)
@@ -142,14 +176,11 @@ def get_complaints(
     if priority_min is not None:
         query = query.filter(Complaint.priority_score >= priority_min)
 
-    # Order by priority_score DESC, then created_at DESC
-    results = query.order_by(Complaint.priority_score.desc(), Complaint.created_at.desc()).all()
-    return results
+    return query.order_by(Complaint.priority_score.desc(), Complaint.created_at.desc()).all()
 
 
 @app.get("/complaints/{complaint_id}", response_model=schemas.ComplaintOut)
 def get_complaint_detail(complaint_id: str, db: Session = Depends(get_db)):
-    """Get full details and event timeline for a single complaint."""
     complaint = db.query(Complaint).options(
         joinedload(Complaint.assigned_worker),
         joinedload(Complaint.events)
@@ -167,7 +198,6 @@ def assign_worker(
     db: Session = Depends(get_db),
     user_payload: dict = Depends(verify_token)
 ):
-    """Staff action: Assign a worker to a complaint."""
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
@@ -182,12 +212,11 @@ def assign_worker(
     complaint.assigned_at = now
     worker.status = "on_task"
 
-    # Log event
     event = ComplaintEvent(
         complaint_id=complaint.id,
         event_type="ASSIGNED",
         timestamp=now,
-        details=f"Assigned to staff worker '{worker.name}' (Zone: {worker.zone})."
+        details=f"Assigned to staff worker '{worker.name}' (Zone: {worker.zone}, Contact: {worker.phone})."
     )
     db.add(event)
     db.commit()
@@ -202,7 +231,6 @@ def update_status(
     db: Session = Depends(get_db),
     user_payload: dict = Depends(verify_token)
 ):
-    """Staff action: Update complaint status (in_progress, resolved)."""
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
@@ -219,7 +247,7 @@ def update_status(
         if complaint.assigned_worker:
             complaint.assigned_worker.status = "available"
         event_type = "RESOLVED"
-        details = "Sanitation issue marked as resolved and verified by staff."
+        details = "Sanitation issue marked as resolved and verified on ground by staff."
     else:
         event_type = "STATUS_CHANGED"
         details = f"Status updated from '{old_status}' to '{req.status}'."
@@ -242,7 +270,18 @@ def list_workers(zone: Optional[str] = Query(None), db: Session = Depends(get_db
     query = db.query(Worker)
     if zone and zone != "all":
         query = query.filter(Worker.zone == zone)
-    return query.all()
+    workers = query.all()
+
+    res = []
+    for w in workers:
+        active_count = db.query(Complaint).filter(
+            Complaint.assigned_worker_id == w.id,
+            Complaint.status.in_(["assigned", "in_progress"])
+        ).count()
+        w_out = schemas.WorkerOut.from_orm(w)
+        w_out.active_tasks_count = active_count
+        res.append(w_out)
+    return res
 
 @app.get("/zones", response_model=List[schemas.ZoneOut])
 def list_zones(db: Session = Depends(get_db)):
@@ -252,11 +291,8 @@ def list_zones(db: Session = Depends(get_db)):
 # --- PUBLIC TRANSPARENCY STATS ENDPOINTS ---
 @app.get("/stats/response-times", response_model=schemas.ResponseTimesStats)
 def get_response_time_stats(db: Session = Depends(get_db)):
-    """Public transparency: Aggregate resolution times by zone and department without exposing personal complainant data."""
-    # 1. By Zone
     zones = db.query(Zone).all()
     by_zone_res = []
-    
     total_hours_sum = 0.0
     total_resolved_count = 0
 
@@ -286,7 +322,6 @@ def get_response_time_stats(db: Session = Depends(get_db)):
             resolved_complaints=res_cnt
         ))
 
-    # 2. By Department
     departments = ["Sanitation Dept", "Water Supply Dept", "Drainage & Sewage Dept", "Solid Waste Management", "Public Health Dept"]
     by_dept_res = []
 
@@ -325,17 +360,14 @@ def get_response_time_stats(db: Session = Depends(get_db)):
 
 @app.get("/stats/summary", response_model=schemas.SummaryStats)
 def get_summary_stats(db: Session = Depends(get_db)):
-    """Public summary: Overall complaints count, resolution status, synthetic ratio, and ML classifier metrics."""
     total_count = db.query(Complaint).count()
     resolved_count = db.query(Complaint).filter(Complaint.status == "resolved").count()
     in_progress_count = db.query(Complaint).filter(Complaint.status == "in_progress").count()
     assigned_count = db.query(Complaint).filter(Complaint.status == "assigned").count()
-    reported_count = db.query(Complaint).filter(Complaint.status == "reported").count()
     synthetic_count = db.query(Complaint).filter(Complaint.is_synthetic == True).count()
 
     synthetic_pct = round((synthetic_count / total_count * 100.0), 1) if total_count > 0 else 0.0
 
-    # Zone breakdown
     zones = db.query(Zone).all()
     by_zone = {}
     for z in zones:
@@ -343,7 +375,6 @@ def get_summary_stats(db: Session = Depends(get_db)):
         z_resolved = db.query(Complaint).filter(Complaint.zone == z.name, Complaint.status == "resolved").count()
         by_zone[z.name] = {"total": z_count, "resolved": z_resolved}
 
-    # Category breakdown
     cats = ["toilet_overflow", "no_water", "blocked_drain", "waste_bin_full", "broken_handwashing"]
     by_category = {}
     for c in cats:
@@ -365,6 +396,5 @@ def get_summary_stats(db: Session = Depends(get_db)):
 
 @app.post("/seed")
 def trigger_reseed(db: Session = Depends(get_db)):
-    """Developer route: Re-seed database with synthetic data."""
     seed_database(db)
     return {"message": "Database successfully re-seeded with synthetic dataset!"}

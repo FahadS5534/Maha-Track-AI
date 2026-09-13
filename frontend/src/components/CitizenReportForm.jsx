@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, MapPin, Camera, Sparkles, CheckCircle2, Clock, Shield, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Send, MapPin, Camera, Sparkles, CheckCircle2, AlertTriangle, RefreshCw, Layers } from 'lucide-react';
 import axios from 'axios';
 
 export default function CitizenReportForm({ zones, onComplaintSubmitted }) {
@@ -12,7 +12,6 @@ export default function CitizenReportForm({ zones, onComplaintSubmitted }) {
   const [locationCoords, setLocationCoords] = useState({ lat: 25.4320, lng: 81.8885 });
   const [isClassifying, setIsClassifying] = useState(false);
 
-  // Quick sample Hinglish complaint templates for 30s reporting
   const QUICK_TEMPLATES = [
     "Sector 1 Sangam Ghat mein toilet overflow ho raha hai gandi badboo hai",
     "Sector 5 tap water stopped no drinking water near food stalls",
@@ -21,7 +20,6 @@ export default function CitizenReportForm({ zones, onComplaintSubmitted }) {
     "Sector 4 Arail Ghat handwash station tap is broken spraying water"
   ];
 
-  // Auto-classify when rawText changes (debounced)
   useEffect(() => {
     if (rawText.trim().length >= 8) {
       const timer = setTimeout(() => {
@@ -83,7 +81,7 @@ export default function CitizenReportForm({ zones, onComplaintSubmitted }) {
       if (onComplaintSubmitted) onComplaintSubmitted(res.data);
     } catch (err) {
       console.error("Error submitting complaint:", err);
-      alert("Failed to submit report. Please check backend connection.");
+      alert("Failed to submit report. Please check connection.");
     } finally {
       setIsSubmitting(false);
     }
@@ -114,50 +112,98 @@ export default function CitizenReportForm({ zones, onComplaintSubmitted }) {
       </div>
 
       {submittedResult ? (
-        /* Submission Success Card */
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-brand-emerald/30 shadow-lg text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
-          <div className="w-16 h-16 bg-brand-emerald-light rounded-full flex items-center justify-center mx-auto border border-brand-emerald/20 text-brand-emerald">
-            <CheckCircle2 className="w-9 h-9" />
-          </div>
+        submittedResult.already_reported ? (
+          /* Already Reported Duplicate Alert Card */
+          <div className="bg-white rounded-2xl p-6 sm:p-8 border border-brand-amber/40 shadow-lg text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-brand-amber-light rounded-full flex items-center justify-center mx-auto border border-brand-amber/30 text-brand-amber">
+              <Layers className="w-8 h-8" />
+            </div>
 
-          <div>
-            <h3 className="text-xl font-bold text-brand-dark">Sanitation Report Registered!</h3>
-            <p className="text-xs text-brand-stone mt-1">Ticket ID: <span className="font-mono font-semibold text-brand-dark">{submittedResult.id}</span></p>
-          </div>
-
-          <div className="bg-brand-linen rounded-xl p-4 border border-brand-border text-left grid grid-cols-2 gap-4 text-xs">
             <div>
-              <span className="text-brand-stone block">Assigned Dept</span>
-              <span className="font-bold text-brand-dark">{submittedResult.department}</span>
-            </div>
-            <div>
-              <span className="text-brand-stone block">Detected Category</span>
-              <span className="font-bold text-brand-terracotta capitalize">{submittedResult.category.replace('_', ' ')}</span>
-            </div>
-            <div>
-              <span className="text-brand-stone block">Priority Score</span>
-              <span className="font-bold text-brand-amber text-sm">{submittedResult.priority_score} / 100</span>
-            </div>
-            <div>
-              <span className="text-brand-stone block">Status</span>
-              <span className="font-bold text-brand-emerald bg-brand-emerald-light px-2 py-0.5 rounded-md border border-brand-emerald/20 inline-block mt-0.5 uppercase tracking-wider text-[10px]">
-                {submittedResult.status}
+              <span className="text-xs font-bold text-brand-amber uppercase tracking-wider bg-brand-amber-light px-2.5 py-1 rounded-full border border-brand-amber/30">
+                Already Reported Issue Flagged
               </span>
+              <h3 className="text-xl font-bold text-brand-dark mt-2">This Sanitation Issue Was Already Reported!</h3>
+              <p className="text-xs text-brand-stone mt-1">
+                An active ticket <span className="font-mono font-semibold text-brand-dark">#{submittedResult.id.substring(0, 10)}</span> already exists for <strong className="capitalize">{submittedResult.category.replace('_', ' ')}</strong> in {submittedResult.zone}.
+              </p>
             </div>
+
+            <div className="bg-brand-amber-light/40 rounded-xl p-4 border border-brand-amber/30 text-left space-y-3 text-xs">
+              <div className="flex justify-between items-center border-b border-brand-amber/20 pb-2">
+                <span className="text-brand-stone">Current Status:</span>
+                <span className="font-bold text-brand-emerald bg-brand-emerald-light px-2 py-0.5 rounded uppercase text-[10px]">
+                  {submittedResult.status}
+                </span>
+              </div>
+              <div className="flex justify-between items-center border-b border-brand-amber/20 pb-2">
+                <span className="text-brand-stone">Total Citizen Reports:</span>
+                <span className="font-bold text-brand-dark text-sm">{submittedResult.duplicate_count || 2} Citizen Reports</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-brand-stone">Escalated Priority Score:</span>
+                <span className="font-bold text-brand-terracotta text-sm">{submittedResult.priority_score} / 100 🔥</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-brand-dark bg-brand-linen p-3 rounded-xl border border-brand-border italic">
+              ✨ Your report has been merged into the existing ticket and its priority score was automatically boosted to ensure faster government field action!
+            </p>
+
+            <button
+              onClick={handleResetForm}
+              className="w-full py-3 px-4 rounded-xl text-xs font-bold bg-brand-dark text-white hover:bg-black transition-all flex items-center justify-center space-x-2 shadow-xs"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Report Another Issue</span>
+            </button>
           </div>
+        ) : (
+          /* Normal Submission Success Card */
+          <div className="bg-white rounded-2xl p-6 sm:p-8 border border-brand-emerald/30 shadow-lg text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-brand-emerald-light rounded-full flex items-center justify-center mx-auto border border-brand-emerald/20 text-brand-emerald">
+              <CheckCircle2 className="w-9 h-9" />
+            </div>
 
-          <p className="text-xs text-brand-stone italic">
-            This issue has been placed directly into the Government Staff Queue and assigned a priority score based on severity and local density.
-          </p>
+            <div>
+              <h3 className="text-xl font-bold text-brand-dark">Sanitation Report Registered!</h3>
+              <p className="text-xs text-brand-stone mt-1">Ticket ID: <span className="font-mono font-semibold text-brand-dark">{submittedResult.id}</span></p>
+            </div>
 
-          <button
-            onClick={handleResetForm}
-            className="w-full py-3 px-4 rounded-xl text-xs font-bold bg-brand-dark text-white hover:bg-black transition-all flex items-center justify-center space-x-2 shadow-xs"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Report Another Issue</span>
-          </button>
-        </div>
+            <div className="bg-brand-linen rounded-xl p-4 border border-brand-border text-left grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <span className="text-brand-stone block">Assigned Dept</span>
+                <span className="font-bold text-brand-dark">{submittedResult.department}</span>
+              </div>
+              <div>
+                <span className="text-brand-stone block">Detected Category</span>
+                <span className="font-bold text-brand-terracotta capitalize">{submittedResult.category.replace('_', ' ')}</span>
+              </div>
+              <div>
+                <span className="text-brand-stone block">Priority Score</span>
+                <span className="font-bold text-brand-amber text-sm">{submittedResult.priority_score} / 100</span>
+              </div>
+              <div>
+                <span className="text-brand-stone block">Status</span>
+                <span className="font-bold text-brand-emerald bg-brand-emerald-light px-2 py-0.5 rounded-md border border-brand-emerald/20 inline-block mt-0.5 uppercase tracking-wider text-[10px]">
+                  {submittedResult.status}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-brand-stone italic">
+              This issue has been placed directly into the Government Staff Queue and assigned a priority score based on severity and local density.
+            </p>
+
+            <button
+              onClick={handleResetForm}
+              className="w-full py-3 px-4 rounded-xl text-xs font-bold bg-brand-dark text-white hover:bg-black transition-all flex items-center justify-center space-x-2 shadow-xs"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Report Another Issue</span>
+            </button>
+          </div>
+        )
       ) : (
         /* Active Form */
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 sm:p-8 border border-brand-border shadow-xs space-y-6">

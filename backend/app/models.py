@@ -24,6 +24,8 @@ class Worker(Base):
 
     id = Column(String, primary_key=True, default=generate_uuid)
     name = Column(String, nullable=False)
+    phone = Column(String, default="+91 98765 43210")
+    department = Column(String, default="Sanitation Dept")
     zone = Column(String, ForeignKey("zones.name"), nullable=False)
     status = Column(String, default="available") # available | on_task
     is_synthetic = Column(Boolean, default=True)
@@ -37,12 +39,14 @@ class Complaint(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     raw_text = Column(Text, nullable=False)
     category = Column(String, nullable=False) # toilet_overflow, no_water, blocked_drain, waste_bin_full, broken_handwashing
-    department = Column(String, nullable=False) # Sanitation Dept, Water Supply Dept, Drainage & Sewage Dept, Solid Waste Management, Public Health Dept
+    department = Column(String, nullable=False)
     zone = Column(String, ForeignKey("zones.name"), nullable=False)
     priority_score = Column(Integer, default=0) # 0 - 100
     status = Column(String, default="reported") # reported | assigned | in_progress | resolved
     photo_url = Column(Text, nullable=True)
     is_synthetic = Column(Boolean, default=True)
+    duplicate_count = Column(Integer, default=1)
+    is_duplicate = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     assigned_at = Column(DateTime, nullable=True)
     resolved_at = Column(DateTime, nullable=True)
@@ -59,7 +63,7 @@ class ComplaintEvent(Base):
 
     id = Column(String, primary_key=True, default=generate_uuid)
     complaint_id = Column(String, ForeignKey("complaints.id"), nullable=False)
-    event_type = Column(String, nullable=False) # CREATED | CLASSIFIED | ASSIGNED | STATUS_CHANGED | RESOLVED
+    event_type = Column(String, nullable=False) # CREATED | CLASSIFIED | ASSIGNED | STATUS_CHANGED | RESOLVED | DUPLICATE_REPORTED
     timestamp = Column(DateTime, default=datetime.utcnow)
     details = Column(Text, nullable=True)
 
