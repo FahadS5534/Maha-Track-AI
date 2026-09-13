@@ -3,15 +3,14 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { MapPin, AlertCircle, Shield, Clock } from 'lucide-react';
 
-// Custom Leaflet marker icons using colored SVG data URLs
 const createCustomMarkerIcon = (priority, status) => {
-  let color = '#2D6A4F'; // Emerald (Low priority / resolved)
+  let color = '#2D6A4F';
   if (status === 'resolved') {
     color = '#10B981';
   } else if (priority >= 75) {
-    color = '#B91C1C'; // Red (High priority)
+    color = '#B91C1C';
   } else if (priority >= 45) {
-    color = '#D97706'; // Amber (Medium priority)
+    color = '#D97706';
   }
 
   const svgString = `
@@ -41,8 +40,8 @@ function ChangeMapView({ center }) {
 }
 
 export default function IncidentMap({ complaints, selectedComplaint, onSelectComplaint }) {
-  // Center near Prayagraj Sangam Mahakumbh area
-  const defaultCenter = [25.4350, 81.8850];
+  // Default map center: Ramkund, Godavari River, Panchavati, Nashik (19.9985, 73.7925)
+  const defaultCenter = [19.9985, 73.7925];
 
   return (
     <div className="w-full h-[420px] rounded-2xl overflow-hidden border border-brand-border shadow-xs relative bg-white">
@@ -112,7 +111,7 @@ export default function IncidentMap({ complaints, selectedComplaint, onSelectCom
 
       {/* Map Legend overlay */}
       <div className="absolute bottom-3 left-3 z-10 bg-white/95 backdrop-blur-xs p-2.5 rounded-xl border border-brand-border shadow-xs text-[11px] space-y-1">
-        <div className="font-bold text-brand-dark mb-1">Incident Priority Legend</div>
+        <div className="font-bold text-brand-dark mb-1">Nashik Kumbh Priority Legend</div>
         <div className="flex items-center space-x-2">
           <span className="w-2.5 h-2.5 rounded-full bg-red-700 inline-block"></span>
           <span className="text-brand-stone">High Priority (75+)</span>

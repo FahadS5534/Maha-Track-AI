@@ -9,7 +9,7 @@ export default function RoleSelectionLanding({ onSelectRole }) {
       <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
         <div className="inline-flex items-center space-x-2 bg-brand-terracotta/10 text-brand-terracotta px-4 py-1.5 rounded-full text-xs font-bold border border-brand-terracotta/20 shadow-2xs">
           <Sparkles className="w-4 h-4 text-brand-terracotta" />
-          <span>Mahakumbh 2026 Civic Sanitation Response</span>
+          <span>Nashik Simhastha Kumbh Mela 2027 Civic Sanitation Response</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-extrabold text-brand-dark tracking-tight leading-tight">
@@ -17,7 +17,7 @@ export default function RoleSelectionLanding({ onSelectRole }) {
         </h1>
         
         <p className="text-sm sm:text-base text-brand-stone max-w-2xl mx-auto font-medium">
-          Select your portal to report sanitation issues as a citizen or manage field dispatches as an event administrator.
+          Select your portal to report sanitation issues as a citizen or manage field dispatches across Nashik & Trimbakeshwar as an event administrator.
         </p>
       </div>
 
@@ -42,7 +42,7 @@ export default function RoleSelectionLanding({ onSelectRole }) {
             </div>
 
             <p className="text-xs text-brand-stone leading-relaxed">
-              Report sanitation issues (toilets, water, drains, waste bins) in under 30 seconds. View public resolution statistics transparently.
+              Report sanitation issues at Ramkund, Tapovan Sadhugram, or Trimbakeshwar in under 30 seconds. View public resolution statistics transparently.
             </p>
 
             <ul className="space-y-2 text-xs text-brand-dark font-medium pt-2">
@@ -52,7 +52,7 @@ export default function RoleSelectionLanding({ onSelectRole }) {
               </li>
               <li className="flex items-center space-x-2">
                 <CheckCircle2 className="w-4 h-4 text-brand-emerald flex-shrink-0" />
-                <span>Hinglish & English text support with auto-classification</span>
+                <span>Hinglish, Marathi & English text with auto-classification</span>
               </li>
               <li className="flex items-center space-x-2">
                 <CheckCircle2 className="w-4 h-4 text-brand-emerald flex-shrink-0" />
@@ -87,7 +87,7 @@ export default function RoleSelectionLanding({ onSelectRole }) {
             </div>
 
             <p className="text-xs text-brand-stone leading-relaxed">
-              Prioritized dispatch queue for government staff and event control rooms. Assign field workers, update task statuses, and inspect maps.
+              Prioritized dispatch queue for Nashik Municipal Corporation & event control rooms. Assign field workers, update task statuses, and inspect maps.
             </p>
 
             <ul className="space-y-2 text-xs text-brand-dark font-medium pt-2">

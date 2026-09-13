@@ -8,14 +8,14 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-SECRET_KEY = os.environ.get("JWT_SECRET", "mahakumbh-sanitation-secret-key-2026-secure")
+SECRET_KEY = os.environ.get("JWT_SECRET", "nashikkumbh-sanitation-secret-key-2027-secure")
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24 hours
 
 security = HTTPBearer(auto_error=False)
 
 STAFF_CREDENTIALS = {
-    "admin@mahakumbh.gov.in": "admin123",
-    "sanitation.officer@mahakumbh.gov.in": "mahakumbh2026",
+    "admin@nashikkumbh.gov.in": "admin123",
+    "sanitation.officer@nashikkumbh.gov.in": "nashik2027",
     "staff": "staff123"
 }
 

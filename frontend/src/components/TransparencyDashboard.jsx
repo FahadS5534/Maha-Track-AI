@@ -28,13 +28,12 @@ export default function TransparencyDashboard({ syntheticPercentage, classifierM
     }
   };
 
-  // Warm light palette colors for charts (no blues!)
   const DEPT_COLORS = {
-    "Sanitation Dept": "#C85A32",       // Terracotta
-    "Water Supply Dept": "#D97706",     // Warm Amber
-    "Drainage & Sewage Dept": "#1F2923",// Slate Dark
-    "Solid Waste Management": "#2D6A4F",// Forest Emerald
-    "Public Health Dept": "#8B5CF6"    // Soft Purple Accent
+    "Sanitation Dept": "#C85A32",
+    "Water Supply Dept": "#D97706",
+    "Drainage & Sewage Dept": "#1F2923",
+    "Solid Waste Management": "#2D6A4F",
+    "Public Health Dept": "#8B5CF6"
   };
 
   const CATEGORY_COLORS = ["#C85A32", "#D97706", "#2D6A4F", "#1F2923", "#991B1B"];
@@ -47,7 +46,6 @@ export default function TransparencyDashboard({ syntheticPercentage, classifierM
     );
   }
 
-  // Format category data for PieChart
   const categoryChartData = stats && stats.by_category
     ? Object.entries(stats.by_category).map(([cat, count]) => ({
         name: cat.replace('_', ' ').toUpperCase(),
@@ -69,7 +67,7 @@ export default function TransparencyDashboard({ syntheticPercentage, classifierM
               </h1>
             </div>
             <p className="text-xs sm:text-sm text-brand-stone mt-1 max-w-2xl">
-              Real-time aggregate performance tracking across Mahakumbh 2026 zones.
+              Real-time aggregate performance tracking across Nashik & Trimbakeshwar Kumbh Mela 2027 zones.
               <strong className="text-brand-dark ml-1">Citizens Report → Government Acts → Performance is Measurable.</strong>
             </p>
           </div>
@@ -230,7 +228,7 @@ export default function TransparencyDashboard({ syntheticPercentage, classifierM
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div>
             <h3 className="font-bold text-brand-dark text-base">Sector & Zone Performance Index</h3>
-            <p className="text-xs text-brand-stone">Aggregate resolution statistics across all 16 Mahakumbh Prayagraj sectors</p>
+            <p className="text-xs text-brand-stone">Aggregate resolution statistics across all 16 Nashik & Trimbakeshwar sectors</p>
           </div>
         </div>
 

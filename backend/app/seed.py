@@ -6,63 +6,64 @@ from app.models import Zone, Worker, Complaint, ComplaintEvent
 from app.classifier import classifier_instance
 from app.priority import calculate_priority_score
 
+# Nashik-Trimbakeshwar Simhastha Kumbh Mela 2027 Sectors & Coordinates
 SECTORS_DATA = [
-    {"name": "Sector 1 (Sangam Ghat)", "sector_code": "SEC-01", "lat": 25.4320, "lng": 81.8885},
-    {"name": "Sector 2 (Shastri Bridge)", "sector_code": "SEC-02", "lat": 25.4395, "lng": 81.8820},
-    {"name": "Sector 3 (Parade Ground)", "sector_code": "SEC-03", "lat": 25.4450, "lng": 81.8740},
-    {"name": "Sector 4 (Arail Ghat)", "sector_code": "SEC-04", "lat": 25.4180, "lng": 81.8760},
-    {"name": "Sector 5 (Jhunsi Pontoon 1)", "sector_code": "SEC-05", "lat": 25.4380, "lng": 81.8990},
-    {"name": "Sector 6 (Jhunsi Pontoon 2)", "sector_code": "SEC-06", "lat": 25.4420, "lng": 81.9050},
-    {"name": "Sector 7 (Nagvasuki Temple)", "sector_code": "SEC-07", "lat": 25.4560, "lng": 81.8710},
-    {"name": "Sector 8 (Bhakti Vedant Marg)", "sector_code": "SEC-08", "lat": 25.4490, "lng": 81.8890},
-    {"name": "Sector 9 (Kalyani Devi Road)", "sector_code": "SEC-09", "lat": 25.4280, "lng": 81.8550},
-    {"name": "Sector 10 (Trivenipuram Gate)", "sector_code": "SEC-10", "lat": 25.4470, "lng": 81.9180},
-    {"name": "Sector 11 (VVIP Tent City)", "sector_code": "SEC-11", "lat": 25.4290, "lng": 81.8790},
-    {"name": "Sector 12 (Akshayavat Marg)", "sector_code": "SEC-12", "lat": 25.4310, "lng": 81.8720},
-    {"name": "Sector 13 (Sangam Control Room)", "sector_code": "SEC-13", "lat": 25.4360, "lng": 81.8810},
-    {"name": "Sector 14 (Food Plaza & Bazaar)", "sector_code": "SEC-14", "lat": 25.4410, "lng": 81.8680},
-    {"name": "Sector 15 (Pilgrim Shelter 3)", "sector_code": "SEC-15", "lat": 25.4230, "lng": 81.8640},
-    {"name": "Sector 16 (Daraganj Station Side)", "sector_code": "SEC-16", "lat": 25.4520, "lng": 81.8800}
+    {"name": "Sector 1 (Ramkund Bathing Ghat)", "sector_code": "SEC-01", "lat": 19.9985, "lng": 73.7925},
+    {"name": "Sector 2 (Tapovan Sadhugram Camp)", "sector_code": "SEC-02", "lat": 19.9930, "lng": 73.8050},
+    {"name": "Sector 3 (Kalaram Temple Sector)", "sector_code": "SEC-03", "lat": 19.9995, "lng": 73.7940},
+    {"name": "Sector 4 (Trimbakeshwar Kushavart Kund)", "sector_code": "SEC-04", "lat": 19.9325, "lng": 73.5305},
+    {"name": "Sector 5 (Panchavati Ghat & Sita Gufa)", "sector_code": "SEC-05", "lat": 19.9970, "lng": 73.7930},
+    {"name": "Sector 6 (Gauri Patangan & Talkuteshwar)", "sector_code": "SEC-06", "lat": 19.9960, "lng": 73.7960},
+    {"name": "Sector 7 (Kapaleshwar Temple Marg)", "sector_code": "SEC-07", "lat": 19.9990, "lng": 73.7915},
+    {"name": "Sector 8 (Ahilyabai Holkar Bridge)", "sector_code": "SEC-08", "lat": 20.0010, "lng": 73.7900},
+    {"name": "Sector 9 (Sadhugram Sector 2 - Tapovan)", "sector_code": "SEC-09", "lat": 19.9910, "lng": 73.8080},
+    {"name": "Sector 10 (Nilgiri Baug Bus & Parking)", "sector_code": "SEC-10", "lat": 19.9880, "lng": 73.8150},
+    {"name": "Sector 11 (VVIP Tent City - Godavari)", "sector_code": "SEC-11", "lat": 19.9950, "lng": 73.8000},
+    {"name": "Sector 12 (Trimbak Road Entry Hub)", "sector_code": "SEC-12", "lat": 19.9650, "lng": 73.7500},
+    {"name": "Sector 13 (Nashik Control Room - Panchavati)", "sector_code": "SEC-13", "lat": 19.9975, "lng": 73.7905},
+    {"name": "Sector 14 (Food Plaza & Bazaar - Gangapur)", "sector_code": "SEC-14", "lat": 20.0050, "lng": 73.7750},
+    {"name": "Sector 15 (Pilgrim Shelter - Nashik Road)", "sector_code": "SEC-15", "lat": 19.9550, "lng": 73.8300},
+    {"name": "Sector 16 (Brahmagiri Foothills - Trimbak)", "sector_code": "SEC-16", "lat": 19.9300, "lng": 73.5250}
 ]
 
 WORKERS_NAMES = [
-    ("Ramesh Kumar", "Sector 1 (Sangam Ghat)", "+91 98123 45671", "Sanitation Dept"),
-    ("Suresh Sharma", "Sector 1 (Sangam Ghat)", "+91 98123 45672", "Water Supply Dept"),
-    ("Amit Yadav", "Sector 2 (Shastri Bridge)", "+91 98123 45673", "Drainage & Sewage Dept"),
-    ("Vikram Singh", "Sector 3 (Parade Ground)", "+91 98123 45674", "Solid Waste Management"),
-    ("Pankaj Verma", "Sector 4 (Arail Ghat)", "+91 98123 45675", "Public Health Dept"),
-    ("Dinesh Gupta", "Sector 5 (Jhunsi Pontoon 1)", "+91 98123 45676", "Sanitation Dept"),
-    ("Manoj Tiwari", "Sector 6 (Jhunsi Pontoon 2)", "+91 98123 45677", "Water Supply Dept"),
-    ("Sunil Kumar", "Sector 7 (Nagvasuki Temple)", "+91 98123 45678", "Solid Waste Management"),
-    ("Rajesh Bind", "Sector 8 (Bhakti Vedant Marg)", "+91 98123 45679", "Sanitation Dept"),
-    ("Deepak Maurya", "Sector 9 (Kalyani Devi Road)", "+91 98123 45680", "Drainage & Sewage Dept"),
-    ("Santosh Prajapati", "Sector 10 (Trivenipuram Gate)", "+91 98123 45681", "Sanitation Dept"),
-    ("Anil Pal", "Sector 11 (VVIP Tent City)", "+91 98123 45682", "Public Health Dept"),
-    ("Rakesh Nishad", "Sector 12 (Akshayavat Marg)", "+91 98123 45683", "Sanitation Dept"),
-    ("Vipin Pandey", "Sector 13 (Sangam Control Room)", "+91 98123 45684", "Water Supply Dept"),
-    ("Vijay Mishra", "Sector 14 (Food Plaza & Bazaar)", "+91 98123 45685", "Solid Waste Management"),
-    ("Sanjay Gauttam", "Sector 15 (Pilgrim Shelter 3)", "+91 98123 45686", "Public Health Dept"),
-    ("Gopal Tripathi", "Sector 16 (Daraganj Station Side)", "+91 98123 45687", "Drainage & Sewage Dept")
+    ("Sanjay Patil", "Sector 1 (Ramkund Bathing Ghat)", "+91 98220 11001", "Sanitation Dept"),
+    ("Prakash Deshmukh", "Sector 1 (Ramkund Bathing Ghat)", "+91 98220 11002", "Water Supply Dept"),
+    ("Vinod Shinde", "Sector 2 (Tapovan Sadhugram Camp)", "+91 98220 11003", "Drainage & Sewage Dept"),
+    ("Ganesh Kulkarni", "Sector 3 (Kalaram Temple Sector)", "+91 98220 11004", "Solid Waste Management"),
+    ("Sachin Pawar", "Sector 4 (Trimbakeshwar Kushavart Kund)", "+91 98220 11005", "Public Health Dept"),
+    ("Nitin Jadhav", "Sector 5 (Panchavati Ghat & Sita Gufa)", "+91 98220 11006", "Sanitation Dept"),
+    ("Mahesh More", "Sector 6 (Gauri Patangan & Talkuteshwar)", "+91 98220 11007", "Water Supply Dept"),
+    ("Rahul Gaikwad", "Sector 7 (Kapaleshwar Temple Marg)", "+91 98220 11008", "Solid Waste Management"),
+    ("Vijay Wagh", "Sector 8 (Ahilyabai Holkar Bridge)", "+91 98220 11009", "Sanitation Dept"),
+    ("Santosh Bhosale", "Sector 9 (Sadhugram Sector 2 - Tapovan)", "+91 98220 11010", "Drainage & Sewage Dept"),
+    ("Anil Sonawane", "Sector 10 (Nilgiri Baug Bus & Parking)", "+91 98220 11011", "Sanitation Dept"),
+    ("Dnyaneshwar Chaudhari", "Sector 11 (VVIP Tent City - Godavari)", "+91 98220 11012", "Public Health Dept"),
+    ("Sunil Jagtap", "Sector 12 (Trimbak Road Entry Hub)", "+91 98220 11013", "Sanitation Dept"),
+    ("Vilas Khairnar", "Sector 13 (Nashik Control Room - Panchavati)", "+91 98220 11014", "Water Supply Dept"),
+    ("Ashok Borse", "Sector 14 (Food Plaza & Bazaar - Gangapur)", "+91 98220 11015", "Solid Waste Management"),
+    ("Rajendra Bhamare", "Sector 15 (Pilgrim Shelter - Nashik Road)", "+91 98220 11016", "Public Health Dept"),
+    ("Kiran Malpure", "Sector 16 (Brahmagiri Foothills - Trimbak)", "+91 98220 11017", "Drainage & Sewage Dept")
 ]
 
 SEED_COMPLAINT_TEMPLATES = [
-    ("Sector 1 (Sangam Ghat) mein toilet block complete overflow ho gaya gandi badboo aa rahi hai", 25.4322, 81.8888),
-    ("No water in drinking tap near Sector 1 Sangam Ghat bathing area", 25.4325, 81.8890),
-    ("Naali choked with plastic and black sewage spilling on Sector 2 road", 25.4398, 81.8824),
-    ("Dustbin completely full in Sector 3 Parade Ground garbage overflowing", 25.4452, 81.8745),
-    ("Handwash station faucet broken water continuously leaking Sector 4 Arail Ghat", 25.4182, 81.8763),
-    ("Sector 5 toilet me paani nahi aa raha flush zero pressure", 25.4383, 81.8993),
-    ("Drain blocked near Sector 6 food stalls dirty water logging", 25.4423, 81.9054),
-    ("Kachre ka dher near Nagvasuki Temple gate Sector 7 bin overfilled", 25.4562, 81.8714),
-    ("Toilet complex 3 overflow leakage Sector 8 Bhakti Vedant Marg", 25.4493, 81.8894),
-    ("Water supply stopped in tap stand Sector 9 Kalyani Devi Road", 25.4283, 81.8553),
-    ("Choked nala near Trivenipuram Gate Sector 10 sewage flooding walkway", 25.4473, 81.9184),
-    ("Broken handwash basin spraying muddy water Sector 11 VVIP Tent City", 25.4293, 81.8794),
-    ("Bio toilet overflow in Sector 12 Akshayavat Marg pilgrims complaining", 25.4313, 81.8724),
-    ("Drinking water kiosk dry Sector 13 Sangam Control Room side", 25.4363, 81.8814),
-    ("Trash bin full with paper plates and tea cups Sector 14 Food Plaza", 25.4413, 81.8684),
-    ("Handwashing unit tap missing Sector 15 Pilgrim Shelter 3", 25.4233, 81.8644),
-    ("Nala jam problem near Daraganj station Sector 16", 25.4523, 81.8804)
+    ("Sector 1 (Ramkund Bathing Ghat) mein toilet block complete overflow ho gaya gandi badboo aa rahi hai", 19.9985, 73.7925),
+    ("No water in drinking tap near Sector 1 Ramkund Godavari ghat area", 19.9987, 73.7927),
+    ("Naali choked with plastic and black sewage spilling on Sector 2 Tapovan road", 19.9932, 73.8052),
+    ("Dustbin completely full in Sector 3 Kalaram Temple area garbage overflowing", 19.9997, 73.7942),
+    ("Handwash station faucet broken water continuously leaking Sector 4 Trimbakeshwar Kushavart Kund", 19.9327, 73.5307),
+    ("Sector 5 Panchavati Ghat toilet me paani nahi aa raha flush zero pressure", 19.9972, 73.7932),
+    ("Drain blocked near Sector 6 Gauri Patangan food stalls dirty water logging", 19.9962, 73.7962),
+    ("Kachre ka dher near Kapaleshwar Temple gate Sector 7 bin overfilled", 19.9992, 73.7917),
+    ("Toilet complex 3 overflow leakage Sector 8 Ahilyabai Holkar Bridge side", 20.0012, 73.7902),
+    ("Water supply stopped in tap stand Sector 9 Tapovan Sadhugram Sector 2", 19.9912, 73.8082),
+    ("Choked nala near Nilgiri Baug Bus Stand Sector 10 sewage flooding walkway", 19.9882, 73.8152),
+    ("Broken handwash basin spraying muddy water Sector 11 VVIP Tent City Godavari", 19.9952, 73.8002),
+    ("Bio toilet overflow in Sector 12 Trimbak Road Entry Hub pilgrims complaining", 19.9652, 73.7502),
+    ("Drinking water kiosk dry Sector 13 Nashik Control Room Panchavati side", 19.9977, 73.7907),
+    ("Trash bin full with paper plates and tea cups Sector 14 Food Plaza Gangapur Road", 20.0052, 73.7752),
+    ("Handwashing unit tap missing Sector 15 Pilgrim Shelter Nashik Road Station", 19.9552, 73.8302),
+    ("Nala jam problem near Brahmagiri Foothills Trimbak Sector 16", 19.9302, 73.5252)
 ]
 
 def seed_database(db: Session):
@@ -185,4 +186,4 @@ def seed_database(db: Session):
             db.add(ev4)
 
     db.commit()
-    print(f"Successfully seeded 16 zones, {len(workers_list)} workers, and 180 synthetic complaints with events!")
+    print(f"Successfully seeded 16 Nashik sectors, {len(workers_list)} workers, and 180 synthetic complaints with events!")

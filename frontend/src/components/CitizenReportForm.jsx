@@ -4,20 +4,20 @@ import axios from 'axios';
 
 export default function CitizenReportForm({ zones, onComplaintSubmitted }) {
   const [rawText, setRawText] = useState("");
-  const [selectedZone, setSelectedZone] = useState("Sector 1 (Sangam Ghat)");
+  const [selectedZone, setSelectedZone] = useState("Sector 1 (Ramkund Bathing Ghat)");
   const [photoPreview, setPhotoPreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [classification, setClassification] = useState(null);
   const [submittedResult, setSubmittedResult] = useState(null);
-  const [locationCoords, setLocationCoords] = useState({ lat: 25.4320, lng: 81.8885 });
+  const [locationCoords, setLocationCoords] = useState({ lat: 19.9985, lng: 73.7925 });
   const [isClassifying, setIsClassifying] = useState(false);
 
   const QUICK_TEMPLATES = [
-    "Sector 1 Sangam Ghat mein toilet overflow ho raha hai gandi badboo hai",
-    "Sector 5 tap water stopped no drinking water near food stalls",
-    "Sector 2 Shastri Bridge side open drain choked with garbage",
-    "Sector 3 Parade Ground main dustbin completely full plastic waste everywhere",
-    "Sector 4 Arail Ghat handwash station tap is broken spraying water"
+    "Sector 1 Ramkund Bathing Ghat mein toilet overflow ho raha hai gandi badboo hai",
+    "Sector 4 Trimbakeshwar Kushavart Kund tap water stopped no drinking water",
+    "Sector 2 Tapovan Sadhugram side open drain choked with garbage",
+    "Sector 3 Kalaram Temple main dustbin completely full plastic waste everywhere",
+    "Sector 5 Panchavati Ghat handwash station tap is broken spraying water"
   ];
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function CitizenReportForm({ zones, onComplaintSubmitted }) {
           Report a Sanitation Issue
         </h1>
         <p className="text-xs sm:text-sm text-brand-stone mt-2 max-w-lg mx-auto">
-          Notice overflowing toilets, dry taps, blocked drains, or uncollected garbage? Type in Hindi, Hinglish, or English.
+          Notice overflowing toilets, dry taps, blocked drains, or uncollected garbage in Nashik / Trimbakeshwar? Type in Marathi, Hindi, Hinglish, or English.
         </p>
       </div>
 
@@ -211,7 +211,7 @@ export default function CitizenReportForm({ zones, onComplaintSubmitted }) {
           {/* Quick Preset Buttons */}
           <div>
             <label className="block text-xs font-semibold text-brand-stone mb-2">
-              Quick One-Tap Examples (Hinglish Supported):
+              Quick One-Tap Examples (Nashik Locations):
             </label>
             <div className="flex flex-wrap gap-1.5">
               {QUICK_TEMPLATES.map((tmpl, idx) => (
@@ -221,7 +221,7 @@ export default function CitizenReportForm({ zones, onComplaintSubmitted }) {
                   onClick={() => setRawText(tmpl)}
                   className="text-[11px] bg-brand-muted hover:bg-brand-terracotta/10 hover:text-brand-terracotta text-brand-dark px-2.5 py-1 rounded-lg border border-brand-border transition-all text-left"
                 >
-                  "{tmpl.substring(0, 38)}..."
+                  "{tmpl.substring(0, 42)}..."
                 </button>
               ))}
             </div>
@@ -243,7 +243,7 @@ export default function CitizenReportForm({ zones, onComplaintSubmitted }) {
               rows={3}
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
-              placeholder="e.g. Sector 12 mein toilet bahut kharab hai overflow ho raha hai..."
+              placeholder="e.g. Ramkund Panchavati mein toilet bahut kharab hai overflow ho raha hai..."
               className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-brand-border focus:outline-none focus:ring-2 focus:ring-brand-terracotta bg-brand-linen/30 font-sans"
               required
             />
@@ -281,7 +281,7 @@ export default function CitizenReportForm({ zones, onComplaintSubmitted }) {
                       <option key={z.id} value={z.name}>{z.name} ({z.sector_code})</option>
                     ))
                   ) : (
-                    <option value="Sector 1 (Sangam Ghat)">Sector 1 (Sangam Ghat)</option>
+                    <option value="Sector 1 (Ramkund Bathing Ghat)">Sector 1 (Ramkund Bathing Ghat)</option>
                   )}
                 </select>
                 <MapPin className="w-4 h-4 text-brand-terracotta absolute right-3 top-3 pointer-events-none" />

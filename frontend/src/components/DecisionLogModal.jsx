@@ -16,7 +16,7 @@ export default function DecisionLogModal({ isOpen, onClose }) {
             </div>
             <div>
               <h2 className="font-extrabold text-brand-dark text-lg">System Decision Log (`DECISIONS.md`)</h2>
-              <p className="text-xs text-brand-stone">Technical trade-offs, priority logic, and explicit architectural choices</p>
+              <p className="text-xs text-brand-stone">Technical trade-offs, priority logic, and explicit architectural choices (Nashik Simhastha 2027)</p>
             </div>
           </div>
           <button
@@ -48,13 +48,13 @@ export default function DecisionLogModal({ isOpen, onClose }) {
           <div className="bg-brand-linen/50 rounded-xl p-4 border border-brand-border space-y-2">
             <div className="flex items-center space-x-2 text-brand-emerald font-bold text-sm">
               <Sparkles className="w-4 h-4" />
-              <span>2. Hinglish Classifier (TF-IDF + Logistic Regression)</span>
+              <span>2. Hinglish & Marathi ML Classifier (TF-IDF + Logistic Regression)</span>
             </div>
             <p className="text-brand-dark">
-              <strong>Decided:</strong> `scikit-learn` `TfidfVectorizer` + `LogisticRegression` pipeline trained on a realistic dataset of Hinglish & English complaints across 5 sanitation categories.
+              <strong>Decided:</strong> `scikit-learn` `TfidfVectorizer` + `LogisticRegression` pipeline trained on a realistic dataset of Hinglish & English complaints across 5 sanitation categories in Nashik & Trimbakeshwar.
             </p>
             <p className="text-brand-stone italic">
-              <strong>Why:</strong> Real public complaints during events like Mahakumbh are typed in conversational mixed Hindi-English. Light TF-IDF classifies in &lt;5ms with zero GPU required.
+              <strong>Why:</strong> Real public complaints during events like Nashik Simhastha are typed in conversational mixed Hindi-English. Light TF-IDF classifies in &lt;5ms with zero GPU required.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default function DecisionLogModal({ isOpen, onClose }) {
               <strong>Decided:</strong> Add `is_synthetic` as a real database boolean column on `complaints` and `workers` tables, defaulting to `true` for baseline seed data.
             </p>
             <p className="text-brand-stone italic">
-              <strong>Why:</strong> No public live Mahakumbh complaint API exists. Flagging synthetic data directly in the database allows the public dashboard to honestly disclose demo data lineage.
+              <strong>Why:</strong> Flagging synthetic data directly in the database allows the public dashboard to honestly disclose demo data lineage for Nashik Kumbh Mela 2027.
             </p>
           </div>
 

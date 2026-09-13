@@ -1,6 +1,6 @@
-# Maha-Track AI — Architectural & Design Decision Log
+# Maha-Track AI — Architectural & Design Decision Log (Nashik Kumbh Mela 2027)
 
-This log records key technical decisions, rationale, and trade-offs made during the development of Maha-Track AI.
+This log records key technical decisions, rationale, and trade-offs made during the development of Maha-Track AI for Nashik Simhastha Kumbh Mela 2027.
 
 ---
 
@@ -12,23 +12,22 @@ This log records key technical decisions, rationale, and trade-offs made during 
 
 ---
 
-## [2026-09-13] Decision 2: Classifier Architecture & Hinglish Labeled Dataset
-**Decided**: Implement `scikit-learn` `TfidfVectorizer` paired with `LogisticRegression` trained on a curated synthetic dataset of Hinglish & English complaints across 5 core sanitation categories.
+## [2026-09-13] Decision 2: Classifier Architecture & Hinglish/Marathi Labeled Dataset
+**Decided**: Implement `scikit-learn` `TfidfVectorizer` paired with `LogisticRegression` trained on a curated synthetic dataset of Hinglish & English complaints across 5 core sanitation categories centered on Nashik and Trimbakeshwar sectors.
 - **Categories**:
   1. `toilet_overflow` -> Sanitation Dept
   2. `no_water` -> Water Supply Dept
   3. `blocked_drain` -> Drainage & Sewage Dept
   4. `waste_bin_full` -> Solid Waste Management
   5. `broken_handwashing` -> Public Health Dept
-- **Why**: Real public complaints during events like Mahakumbh are typed in conversational mixed Hindi-English (Hinglish, e.g. *"Sector 14 mein paani nahi aa raha hai"*). Heavy deep learning models (e.g. BERT/LLMs) require GPUs and high latency. TF-IDF + Logistic Regression executes in $<5\text{ms}$ with high interpretability and zero GPU dependency.
+- **Why**: Real public complaints during events like Nashik Simhastha Kumbh Mela are typed in conversational mixed Hindi-English (Hinglish, e.g. *"Ramkund Panchavati mein paani nahi aa raha hai"*). Heavy deep learning models (e.g. BERT/LLMs) require GPUs and high latency. TF-IDF + Logistic Regression executes in $<5\text{ms}$ with high interpretability and zero GPU dependency.
 - **Validation**: Evaluated on an 80/20 held-out test split with exact accuracy and macro F1 score logged transparently.
 
 ---
 
-## [2026-09-13] Decision 3: Synthetic Data Flagging & honest Public Transparency
+## [2026-09-13] Decision 3: Synthetic Data Flagging & Honest Public Transparency
 **Decided**: Include `is_synthetic` as a first-class boolean database column on `complaints` and `workers` tables, defaulting to `true` for demo seed data.
-- **Why**: No public Mahakumbh complaint API exists. Passing off seed data as "live government feed data" is dishonest. By flagging synthetic data directly in the database schema, the public dashboard can display *"100% Demo Data Mode — NGT Mahakumbh Motivation Context"* with full credibility.
-- **Alternatives considered**: Hiding demo nature in documentation (rejected — judges respect explicit data lineage disclosure).
+- **Why**: Passing off seed data as "live government feed data" is dishonest. By flagging synthetic data directly in the database schema, the public dashboard can display *"100% Demo Data Mode — Nashik Simhastha 2027 Motivation Context"* with full credibility.
 
 ---
 
@@ -38,6 +37,6 @@ This log records key technical decisions, rationale, and trade-offs made during 
 
 ---
 
-## [2026-09-13] Decision 5: Event Logging & Response Time Credibility
-**Decided**: Store an immutable audit trail of state transitions (`complaint_events` table) whenever a complaint is created, classified, assigned, or marked resolved.
-- **Why**: The Public Transparency Dashboard relies on mean-time-to-resolution (MTTR) metrics. Hardcoding response statistics in the UI undermines credibility. Real event timestamps guarantee that calculated response times derive directly from operational actions.
+## [2026-09-13] Decision 5: Duplicate Complaint Detection & Priority Escalation
+**Decided**: Check for open duplicate complaints in the same zone & category when a citizen submits a report.
+- **Why**: If multiple citizens report an overflowing toilet at Ramkund Ghat, creating 10 duplicate tickets clutters the queue. Merging reports into an existing open ticket and boosting its priority score (+15 points per duplicate report) ensures faster dispatch action without queue bloat.

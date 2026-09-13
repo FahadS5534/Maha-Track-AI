@@ -16,7 +16,7 @@ export default function App() {
   const [zones, setZones] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [summaryStats, setSummaryStats] = useState(null);
-  const [staffUser, setStaffUser] = useState({ email: "admin@mahakumbh.gov.in", role: "admin" });
+  const [staffUser, setStaffUser] = useState({ email: "admin@nashikkumbh.gov.in", role: "admin" });
   const [isDecisionsOpen, setIsDecisionsOpen] = useState(false);
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-white border-t border-brand-border py-4 px-4 text-center text-xs text-brand-stone mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Maha-Track AI © 2026 — Civic Sanitation Response & Transparency System</span>
+          <span>Maha-Track AI © 2027 — Nashik Simhastha Kumbh Mela Civic Sanitation System</span>
           <div className="flex items-center space-x-3 text-[11px]">
             <button onClick={() => setIsDecisionsOpen(true)} className="hover:underline text-brand-dark font-mono font-semibold">
               DECISIONS.md

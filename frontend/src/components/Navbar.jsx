@@ -3,7 +3,7 @@ import { Shield, Users, BarChart3, FileText, CheckCircle2, AlertTriangle, LogIn,
 
 export default function Navbar({ activePortal, setActivePortal, citizenTab, setCitizenTab, adminTab, setAdminTab, onOpenDecisions, staffUser, setStaffUser }) {
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginEmail, setLoginEmail] = useState("admin@mahakumbh.gov.in");
+  const [loginEmail, setLoginEmail] = useState("admin@nashikkumbh.gov.in");
   const [loginPass, setLoginPass] = useState("admin123");
   const [loginErr, setLoginErr] = useState("");
 
@@ -47,7 +47,7 @@ export default function Navbar({ activePortal, setActivePortal, citizenTab, setC
               <div className="flex items-center space-x-2">
                 <span className="font-extrabold text-base sm:text-lg tracking-tight text-brand-dark">Maha-Track AI</span>
                 <span className="bg-brand-amber/15 text-brand-amber text-[10px] font-bold px-2 py-0.5 rounded-full border border-brand-amber/30 uppercase">
-                  {activePortal === 'admin' ? 'Admin Portal' : activePortal === 'citizen' ? 'Citizen App' : 'Mahakumbh 2026'}
+                  {activePortal === 'admin' ? 'Admin Portal' : activePortal === 'citizen' ? 'Citizen App' : 'Nashik Kumbh 2027'}
                 </span>
               </div>
               <p className="text-[11px] text-brand-stone font-medium hidden sm:block">Civic Sanitation Response & Transparency System</p>

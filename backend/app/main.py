@@ -18,7 +18,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Maha-Track AI Backend",
-    description="Civic Sanitation Response & Transparency API for Mahakumbh 2026",
+    description="Civic Sanitation Response & Transparency API for Nashik Simhastha Kumbh Mela 2027",
     version="1.1.0"
 )
 
@@ -60,20 +60,12 @@ def classify_text(req: schemas.ClassifyRequest):
 # --- CITIZEN COMPLAINT SUBMISSION (WITH DUPLICATE CHECK) ---
 @app.post("/complaints", response_model=schemas.ComplaintOut, status_code=status.HTTP_201_CREATED)
 def create_complaint(req: schemas.ComplaintCreate, db: Session = Depends(get_db)):
-    """
-    Public citizen endpoint:
-    Checks if an open complaint for the same category & zone already exists.
-    If yes: marks already_reported=True, increments duplicate count, boosts priority score, and returns existing complaint.
-    If no: creates a new complaint.
-    """
-    # 1. Run ML classifier
     cls_res = classifier_instance.predict(req.raw_text)
     category = cls_res["category"]
     department = cls_res["department"]
 
     now = datetime.utcnow()
 
-    # 2. Check if an active open complaint already exists in the same zone & category
     existing_open = db.query(Complaint).filter(
         Complaint.zone == req.zone,
         Complaint.category == category,
@@ -81,13 +73,10 @@ def create_complaint(req: schemas.ComplaintCreate, db: Session = Depends(get_db)
     ).first()
 
     if existing_open:
-        # Issue is ALREADY REPORTED! Boost priority and increment counter
         existing_open.duplicate_count = (existing_open.duplicate_count or 1) + 1
         existing_open.is_duplicate = True
-        # Boost priority score by 15 points per duplicate report
         existing_open.priority_score = min(100, existing_open.priority_score + 15)
 
-        # Log duplicate report event
         dup_event = ComplaintEvent(
             complaint_id=existing_open.id,
             event_type="DUPLICATE_REPORTED",
@@ -97,7 +86,6 @@ def create_complaint(req: schemas.ComplaintCreate, db: Session = Depends(get_db)
         db.add(dup_event)
         db.commit()
 
-        # Fetch refreshed record with relationships
         refreshed = db.query(Complaint).options(
             joinedload(Complaint.assigned_worker),
             joinedload(Complaint.events)
@@ -107,7 +95,6 @@ def create_complaint(req: schemas.ComplaintCreate, db: Session = Depends(get_db)
         res_dict.already_reported = True
         return res_dict
 
-    # 3. If new issue: Get default zone coordinates if not provided
     lat = req.lat
     lng = req.lng
     zone_obj = db.query(Zone).filter(Zone.name == req.zone).first()
@@ -216,7 +203,7 @@ def assign_worker(
         complaint_id=complaint.id,
         event_type="ASSIGNED",
         timestamp=now,
-        details=f"Assigned to staff worker '{worker.name}' (Zone: {worker.zone}, Contact: {worker.phone})."
+        details=f"Assigned to worker '{worker.name}' (Contact: {worker.phone}, Zone: {worker.zone})."
     )
     db.add(event)
     db.commit()
